@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Apple glow shockwave",
-    "description": "Plays a Siri-style glow shockwave when you send a message. A toggle beside the submit action switches between composer border light, a Siri-style marquee chasing around the whole window edge, and off."
+    "description": "When you send a message, a Siri-style marquee chases twice around the composer border (a soft colorful band plus a white comet). Only the edge lights up; the interior stays clean."
   }
 }

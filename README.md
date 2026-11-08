@@ -1,18 +1,19 @@
 # Siri Apple Intelligence Light ✨
 
-一个 **DeepSeek Harness (DSH)** 的 UI 插件:点击发送按钮(或按 Enter)发送消息时,播放 **Apple Intelligence / Siri 风格的波纹光冲击波** —— 光从输入框底部涌出,彩色流体沿边缘流动,波纹一圈圈向外扩散。
+一个 **DeepSeek Harness (DSH)** 的 UI 插件:发送消息(点发送按钮或按 Enter)时,一条 **Siri / Apple Intelligence 同款光带**沿输入框边框循环奔跑 —— 彩色光晕打底,白色彗星领跑,只有边框亮,输入框内部保持干净。
 
 ![icon](icon.svg)
 
-## 效果一览
+## 效果
 
-| 模式 | 效果 |
+| 项目 | 说明 |
 |---|---|
-| 🔵 **输入框流光**(默认) | 输入框底部绽放极光光晕,三层错峰波纹向外滚动,彩色色轮在边框后液态流动,一条白色彗星沿卡片边框扫过一圈,发送按钮自身脉冲一次 |
-| ◎ **窗口跑马灯** | 不扩散、不填光 —— 一条 Siri 同款光带**沿整个窗口边缘循环奔跑两圈**(彩色光晕打底 + 白色彗星领跑),只有窗口最外圈亮,内部界面保持干净 |
-| ⛔ **关闭** | 不播放任何特效 |
+| 触发 | 点击发送按钮,或在输入框内按 Enter |
+| 光带 | 彩色 conic 渐变(蓝→紫→粉→橙)贴边奔跑两圈,白色彗星领跑 |
+| 范围 | 仅输入框卡片边框;圆角自动贴合输入框实际圆角;不扩散、不填光 |
+| 按钮 | 发送按钮自身脉冲一次 |
 
-模式开关是发送按钮旁的**小圆钮**,点击循环切换三种模式,状态保存在 `localStorage`,刷新页面不丢失。
+无需任何开关 —— 装好即生效。
 
 其他细节:
 
@@ -72,7 +73,7 @@ cd Siri-Apple-Intelligence-Light
 
 | 现象 | 处理 |
 |---|---|
-| 发送后无任何效果 | 先刷新页面;确认插件页里插件已启用;确认开关不是 ⛔ 关闭状态 |
+| 发送后无任何效果 | 先刷新页面;确认插件页里插件已启用;系统若开启"减少动态效果"会自动禁用特效 |
 | 部分语言界面不触发 | `client.js` 顶部 `SEND_LABEL_RE` 加入对应语言的按钮文案(如 `senden`、`envoyer`),回车发送不受影响 |
 | 完全没有动画 | 系统开了"减少动态效果",这是刻意的无障碍行为 |
 | 想完全卸载 | DSH 插件页移除,或在会话中让助手 `remove_bundle` |
@@ -84,7 +85,7 @@ Siri-Apple-Intelligence-Light/
 ├── package.json        # DSH 插件清单(dsh.client / dsh.bundle.patch 声明)
 ├── cordis.patch.yml    # Loader patch:插入插件条目
 ├── index.js            # Host 半(本插件无需 Host 逻辑)
-├── client.js           # Client 半:全部光效逻辑 + 模式开关
+├── client.js           # Client 半:全部光效逻辑
 ├── locale/en.json      # 英文标题与描述
 ├── locale/zh.json      # 中文标题与描述
 └── icon.svg            # 插件图标
@@ -92,9 +93,8 @@ Siri-Apple-Intelligence-Light/
 
 ## 技术说明
 
-- 注册槽位:`conversation.input.overlay`(特效锚点)+ `conversation.input.right`(模式开关)
+- 注册槽位:`conversation.input.overlay`(特效锚点)
 - 触发判定:捕获阶段监听 composer 区域内语义匹配的发送按钮点击 + 无修饰 Enter 键;特效层通过 portal 挂到 `document.body`
-- 模式持久化:`localStorage` 键 `aigw:mode`
 
 ## License
 
