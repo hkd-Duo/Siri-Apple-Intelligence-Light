@@ -139,10 +139,43 @@ window.__ModuleLoader__.load({
 
     function mk(cls) { const d = document.createElement('div'); d.className = cls; return d; }
 
+    let activeTimer = 0;
+    let trackFrame = 0;
+
     function dismiss() {
       if (activeTimer) { window.clearTimeout(activeTimer); activeTimer = 0; }
+      if (trackFrame) { window.cancelAnimationFrame(trackFrame); trackFrame = 0; }
       if (activeRoot && activeRoot.parentNode) activeRoot.parentNode.removeChild(activeRoot);
       activeRoot = null;
+    }
+
+    // Position/reshape the effect root onto the composer card's live rect.
+    function place(root, el) {
+      if (!el || !el.isConnected) return null;
+      const r = el.getBoundingClientRect();
+      if (!(r.width > 80) || !(r.height > 40)) return null;
+      const cs = window.getComputedStyle(el);
+      const rad = Math.min(parseFloat(cs.borderTopLeftRadius) || 16, 28);
+      root.style.left = r.left + 'px';
+      root.style.top = r.top + 'px';
+      root.style.width = r.width + 'px';
+      root.style.height = r.height + 'px';
+      root.style.setProperty('--aigw-radius', rad + 'px');
+      root.style.borderRadius = rad + 'px';
+      return r;
+    }
+
+    // Keep the marquee glued to the card while the composer re-lays-out: sending
+    // clears a long input and collapses the card back to one row. A snapshot
+    // taken at click time would hug that taller, already-gone box — which reads
+    // as the marquee jumping outside the input.
+    function follow(root, el) {
+      const step = () => {
+        if (activeRoot !== root) return;
+        place(root, el);
+        trackFrame = window.requestAnimationFrame(step);
+      };
+      step();
     }
 
     function addPulse(root, btn, r) {
@@ -165,32 +198,30 @@ window.__ModuleLoader__.load({
       const region = btn ? sharedAncestor(btn, host, 16) : host.parentElement;
       const card = composerCardFor(region || host.parentElement);
 
-      // The marquee traces the composer card's border; when no card-shaped
-      // ancestor is found, fall back to a card-sized band near the bottom.
-      let er, radius = 18;
-      if (card && card.getBoundingClientRect().height <= window.innerHeight * 0.85) {
-        er = card.getBoundingClientRect();
-        if (!er || er.width < 80 || er.height < 40) return;
-        const cs = window.getComputedStyle(card);
-        radius = Math.min(parseFloat(cs.borderTopLeftRadius) || 16, 28);
-      } else {
-        const w = Math.min(560, window.innerWidth - 48);
-        er = { left: (window.innerWidth - w) / 2, top: window.innerHeight - 190, width: w, height: 132 };
-      }
-
       dismiss();
       const root = mk('aigw-root');
-      root.style.left = er.left + 'px';
-      root.style.top = er.top + 'px';
-      root.style.width = er.width + 'px';
-      root.style.height = er.height + 'px';
-      root.style.setProperty('--aigw-radius', radius + 'px');
-      root.style.borderRadius = radius + 'px';
+      let er = card ? place(root, card) : null;
+
+      // Fallback: no card-shaped ancestor found — draw a card-sized band near
+      // the bottom so the effect still reads as a composer border.
+      if (!er) {
+        const w = Math.min(560, window.innerWidth - 48);
+        const top = window.innerHeight - 190;
+        root.style.left = ((window.innerWidth - w) / 2) + 'px';
+        root.style.top = top + 'px';
+        root.style.width = w + 'px';
+        root.style.height = '132px';
+        root.style.setProperty('--aigw-radius', '18px');
+        root.style.borderRadius = '18px';
+        er = { left: (window.innerWidth - w) / 2, top, width: w, height: 132 };
+      }
+
       root.appendChild(mk('aigw-edge-glow'));
       root.appendChild(mk('aigw-edge-comet'));
       addPulse(root, btn, er);
       document.body.appendChild(root);
       activeRoot = root;
+      if (card) follow(root, card);
       activeTimer = window.setTimeout(dismiss, 2400);
     }
 
