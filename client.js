@@ -198,14 +198,14 @@ window.__ModuleLoader__.load({
   100% { opacity: 0; transform: translateX(-50%) scale(1.45); } }
 
 .aigw-fs-ripple { position: absolute; border-radius: 50%;
-  border: 2.5px solid rgba(255,255,255,.45);
-  box-shadow: 0 0 60px rgba(100,210,255,.5), inset 0 0 60px rgba(191,90,242,.3);
-  filter: blur(4px); opacity: 0; transform: translate(-50%,-50%) scale(.2);
-  animation: aigw-fs-ripple 2.1s cubic-bezier(.17,.67,.4,1) forwards; }
+  border: 1.5px solid rgba(255,255,255,.35);
+  box-shadow: 0 0 32px rgba(100,210,255,.32), inset 0 0 32px rgba(191,90,242,.22);
+  filter: blur(3px); opacity: 0; transform: translate(-50%,-50%) scale(.2);
+  animation: aigw-fs-ripple 1.9s cubic-bezier(.17,.67,.4,1) forwards; }
 .aigw-fs-ripple.d2 { animation-delay: .25s; }
 .aigw-fs-ripple.d3 { animation-delay: .5s; }
-@keyframes aigw-fs-ripple { 0% { opacity: .85; transform: translate(-50%,-50%) scale(.2); }
-  100% { opacity: 0; transform: translate(-50%,-50%) scale(13); } }
+@keyframes aigw-fs-ripple { 0% { opacity: .55; transform: translate(-50%,-50%) scale(.2); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(4); } }
 
 .aigw-fs-border { position: absolute; inset: 0; border-radius: 22px; padding: 3px; opacity: 0;
   background: conic-gradient(from var(--aigw-angle) at 50% 50%,
