@@ -68,6 +68,7 @@ window.__ModuleLoader__.load({
       const target = e.target;
       if (!target || !target.closest) return;
       const btn = target.closest('button');
+      if (!btn || (btn.classList && btn.classList.contains('aigw-mode-btn'))) return;
       if (btn && looksLikeSend(btn)) fire(btn);
     }
 
@@ -290,8 +291,8 @@ window.__ModuleLoader__.load({
         root.style.top = r.top + 'px';
         root.style.width = r.width + 'px';
         root.style.height = r.height + 'px';
-        const cs = window.getComputedStyle(card);
-        const radius = Math.min(parseFloat(cs.borderTopLeftRadius) || 16, 28);
+        const cs = card ? window.getComputedStyle(card) : null;
+        const radius = Math.min((cs && parseFloat(cs.borderTopLeftRadius)) || 16, 28);
         root.style.setProperty('--aigw-radius', radius + 'px');
         root.style.borderRadius = radius + 'px';
         const flow = Math.max(r.width, r.height) * 1.35;
@@ -312,7 +313,7 @@ window.__ModuleLoader__.load({
     // Slot registration. The overlay anchor stays invisible; it exists so the
     // click/keydown handlers can scope detection to the composer card our entry
     // is mounted in, and so its <style> rides the component lifecycle. The mode
-    // toggle registers into conversation.input.right, beside the submit action.
+    // toggle floats above the card's top-right corner, rendered by GlowHost.
     // ---------------------------------------------------------------------------
     function GlowHost() {
       const ref = React.useRef(null);
@@ -334,7 +335,8 @@ window.__ModuleLoader__.load({
           'aria-hidden': true,
           className: 'aigw-anchor',
           style: { position: 'absolute', width: 0, height: 0, pointerEvents: 'none' },
-        }));
+        }),
+        h(ModeToggleDock, { key: 'aigw-toggle' }));
     }
 
     const ICONS = {
@@ -352,7 +354,7 @@ window.__ModuleLoader__.load({
         h('path', { d: 'M5.5 5.5l13 13' })),
     };
 
-    function ModeToggle() {
+    function ModeToggle(style) {
       const [mode, setModeState] = React.useState(getMode);
       const cycle = React.useCallback(() => {
         setModeState(prev => {
@@ -367,7 +369,33 @@ window.__ModuleLoader__.load({
         'aria-label': modeTitle(mode),
         onClick: cycle,
         onMouseDown: e => e.stopPropagation(),
+        style: Object.assign({
+          position: 'fixed', zIndex: 2147483000, opacity: .75, lineHeight: 0,
+        }, style || {}),
       }, ICONS[mode] || ICONS.composer);
+    }
+
+    // The toggle floats just above the composer card's top-right corner. It is
+    // positioned from the anchor's card rect so it never depends on another
+    // slot rendering it.
+    function ModeToggleDock() {
+      const [pos, setPos] = React.useState(null);
+      React.useEffect(() => {
+        const update = () => {
+          if (!anchor || !anchor.isConnected) return;
+          const card = composerCardFor(anchor.parentElement);
+          if (!card) return;
+          const r = card.getBoundingClientRect();
+          if (!r || r.width < 80) return;
+          setPos({ left: Math.round(r.right - 30), top: Math.round(r.top - 30) });
+        };
+        update();
+        const timer = window.setInterval(update, 800);
+        window.addEventListener('resize', update);
+        return () => { window.clearInterval(timer); window.removeEventListener('resize', update); };
+      }, []);
+      if (!pos) return null;
+      return ModeToggle({ left: pos.left + 'px', top: pos.top + 'px' });
     }
 
     return {
@@ -378,11 +406,6 @@ window.__ModuleLoader__.load({
           id: 'apple-glow-shockwave',
           order: 90,
         }, GlowHost));
-        ctx.slots.inject('conversation.input.right', () => ctx.slots.register({
-          name: 'conversation.input.right',
-          id: 'apple-glow-shockwave-mode',
-          order: 95,
-        }, ModeToggle));
       },
     };
   },
