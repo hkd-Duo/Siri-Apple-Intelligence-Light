@@ -99,7 +99,7 @@ window.__ModuleLoader__.load({
     }
 
     function modeTitle(m) {
-      if (m === 'fullscreen') return '发光特效:输入框跑马灯 / Glow: composer marquee';
+      if (m === 'fullscreen') return '发光特效:窗口跑马灯 / Glow: window marquee';
       if (m === 'off') return '发光特效:关闭 / Glow: off';
       return '发光特效:输入框流光 / Glow: composer';
     }
@@ -108,8 +108,8 @@ window.__ModuleLoader__.load({
     // The Siri-style glow shockwave. A fixed, pointer-events:none layer is
     // appended to document.body (fixed layers inside the docked composer must
     // portal there). Composer mode aligns it to the composer card rect; marquee
-    // mode runs a Siri-style chase light around the composer card's border —
-    // the edge carries the moving glow, the interior stays clear.
+    // mode runs a Siri-style chase light around the entire window edge — the
+    // perimeter carries the moving glow, the interior stays clear.
     // Layers (Siri / Apple-Intelligence look):
     //   halo   - soft aurora glow igniting at the bottom, spreading outward,
     //            with a slow hue drift
@@ -274,25 +274,15 @@ window.__ModuleLoader__.load({
       const root = mk('aigw-root');
       const fs = mode === 'fullscreen';
       if (fs) {
-        // Marquee mode: a Siri-style chase light looping around the composer
-        // card's border — the edge carries the moving glow, the interior
-        // stays clear.
-        let er, radius = 18;
-        if (card) {
-          er = r;
-          const cs = window.getComputedStyle(card);
-          radius = Math.min(parseFloat(cs.borderTopLeftRadius) || 16, 28);
-        } else {
-          // Fallback: a card-sized marquee centered above the composer area.
-          const w = Math.min(560, window.innerWidth - 48);
-          er = { left: (window.innerWidth - w) / 2, top: oy - 150, width: w, height: 132 };
-        }
-        root.style.left = er.left + 'px';
-        root.style.top = er.top + 'px';
-        root.style.width = er.width + 'px';
-        root.style.height = er.height + 'px';
-        root.style.setProperty('--aigw-radius', radius + 'px');
-        root.style.borderRadius = radius + 'px';
+        // Marquee mode: a Siri-style chase light looping around the entire
+        // DSH window edge — the perimeter carries the moving glow, the
+        // interior stays clear.
+        root.style.left = '0px';
+        root.style.top = '0px';
+        root.style.width = window.innerWidth + 'px';
+        root.style.height = window.innerHeight + 'px';
+        root.style.setProperty('--aigw-radius', '14px');
+        root.style.borderRadius = '14px';
         root.appendChild(mk('aigw-edge-glow'));
         root.appendChild(mk('aigw-edge-comet'));
       } else {
@@ -354,8 +344,8 @@ window.__ModuleLoader__.load({
         h('path', { d: 'M7 16c1.2-1.6 2.7-2.4 5-2.4s3.8.8 5 2.4' })),
       fullscreen: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none',
         stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-        h('rect', { x: 3, y: 5, width: 18, height: 14, rx: 3, opacity: .45 }),
-        h('path', { d: 'M5.5 14.5c3-4.5 7-7 13-6.5' })),
+        h('rect', { x: 2.5, y: 3.5, width: 19, height: 17, rx: 2.5, opacity: .45 }),
+        h('path', { d: 'M4.5 15c4-5.5 9-8.5 15-8' })),
       off: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none',
         stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
         h('circle', { cx: 12, cy: 12, r: 9 }),
