@@ -115,7 +115,7 @@
     mask-composite: exclude;
     animation: aigw-sweep 2.2s cubic-bezier(.45,.05,.35,1) .05s forwards,
       aigw-edge-fade 2.3s ease-out .05s forwards; }
-  @keyframes aigw-edge-fade { 0% { opacity: 0; } 14% { opacity: .95; } 70% { opacity: .6; }
+  @keyframes aigw-edge-fade { 0% { opacity: 0; } 10% { opacity: .95; } 78% { opacity: .8; }
     100% { opacity: 0; } }
 </style>
 </head>
@@ -124,7 +124,7 @@
   <p class="hint">点击下方按钮预览两种模式;实际插件在 DeepSeek Harness 里随发送触发</p>
   <div class="controls">
     <button id="btn-composer">🔵 输入框流光</button>
-    <button id="btn-ring">◎ 窗口光环</button>
+    <button id="btn-ring">◎ 输入框跑马灯</button>
   </div>
   <div class="fake-composer" id="card">
     <span class="fake-input">输入消息…</span>
@@ -158,12 +158,13 @@
     dismiss();
     const root = mk('aigw-root');
     if (mode === 'ring') {
-      // Window ring: glow loop tracing the entire window edge only.
-      root.style.left = '0px'; root.style.top = '0px';
-      root.style.width = innerWidth + 'px'; root.style.height = innerHeight + 'px';
+      // Marquee: Siri-style chase light looping around the composer border.
+      const rr = r;
+      root.style.left = rr.left + 'px'; root.style.top = rr.top + 'px';
+      root.style.width = rr.width + 'px'; root.style.height = rr.height + 'px';
       root.style.overflow = 'hidden';
-      root.style.setProperty('--aigw-radius', '14px');
-      root.style.borderRadius = '14px';
+      root.style.setProperty('--aigw-radius', '18px');
+      root.style.borderRadius = '18px';
       root.appendChild(mk('aigw-edge-glow'));
       root.appendChild(mk('aigw-edge-comet'));
     } else {
