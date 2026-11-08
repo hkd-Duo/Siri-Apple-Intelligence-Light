@@ -99,7 +99,7 @@ window.__ModuleLoader__.load({
     }
 
     function modeTitle(m) {
-      if (m === 'fullscreen') return '发光特效:Siri 光环 / Glow: Siri ring';
+      if (m === 'fullscreen') return '发光特效:边框光环 / Glow: border ring';
       if (m === 'off') return '发光特效:关闭 / Glow: off';
       return '发光特效:输入框流光 / Glow: composer';
     }
@@ -107,8 +107,9 @@ window.__ModuleLoader__.load({
     // ---------------------------------------------------------------------------
     // The Siri-style glow shockwave. A fixed, pointer-events:none layer is
     // appended to document.body (fixed layers inside the docked composer must
-    // portal there). Composer mode aligns it to the composer card rect; full
-    // screen mode spans the viewport and ripples out from the composer.
+    // portal there). Composer mode aligns it to the composer card rect; ring
+    // mode traces one glow loop around the composer card's border only — the
+    // edge lights up, the interior stays clear.
     // Layers (Siri / Apple-Intelligence look):
     //   halo   - soft aurora glow igniting at the bottom, spreading outward,
     //            with a slow hue drift
@@ -117,6 +118,7 @@ window.__ModuleLoader__.load({
     //   flow   - a large, heavily blurred conic color wheel slowly rotating
     //            behind the card edge (the liquid Siri edge light)
     //   beam   - the sharp light comet sweeping around the border once
+    //   edge-glow / edge-comet - ring-mode layers wrapping the card border
     //   pulse  - a brief pulse ring on the submit button itself
     // ---------------------------------------------------------------------------
     const CSS_TEXT = `
@@ -186,18 +188,32 @@ window.__ModuleLoader__.load({
 @keyframes aigw-pulse { 0% { opacity: .9; transform: scale(.6); }
   100% { opacity: 0; transform: scale(1.6); } }
 
-/* Ring mode: one Siri-style glow ring blooming at the send position. */
-.aigw-siri-ring { position: absolute; border-radius: 50%;
-  background: conic-gradient(from 0deg,
+/* Ring mode: one glow wrapping the entire DSH window edge. */
+.aigw-edge-glow { position: absolute; inset: 0; border-radius: var(--aigw-radius, 18px);
+  padding: 8px; opacity: 0; mix-blend-mode: screen; filter: blur(7px) saturate(1.35);
+  background: conic-gradient(from var(--aigw-angle) at 50% 50%,
     #64d2ff 0deg, #0a84ff 60deg, #bf5af2 130deg, #ff375f 200deg,
     #ff9f0a 265deg, #64d2ff 360deg);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - var(--aigw-band, 16px)), #fff calc(50% - var(--aigw-band, 16px) + 1.5px));
-  mask: radial-gradient(farthest-side, transparent calc(50% - var(--aigw-band, 16px)), #fff calc(50% - var(--aigw-band, 16px) + 1.5px));
-  filter: blur(9px) saturate(1.3); opacity: 0;
-  transform: translate(-50%,-50%) scale(.55);
-  animation: aigw-siri-ring 1.7s cubic-bezier(.22,.61,.36,1) forwards; }
-@keyframes aigw-siri-ring { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.55); }
-  24% { opacity: .9; } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.5); } }
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: aigw-sweep 2.2s cubic-bezier(.45,.05,.35,1) .05s forwards,
+    aigw-edge-fade 2.3s ease-out .05s forwards; }
+.aigw-edge-comet { position: absolute; inset: 0; border-radius: var(--aigw-radius, 18px);
+  padding: 2.5px; opacity: 0;
+  background: conic-gradient(from var(--aigw-angle) at 50% 50%,
+    transparent 0deg, rgba(255,255,255,0) 40deg, #ffffff 96deg,
+    rgba(100,210,255,.9) 130deg, #0a84ff 160deg, #bf5af2 210deg,
+    #ff375f 250deg, rgba(255,159,10,.8) 280deg, transparent 330deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: aigw-sweep 2.2s cubic-bezier(.45,.05,.35,1) .05s forwards,
+    aigw-edge-fade 2.3s ease-out .05s forwards; }
+@keyframes aigw-edge-fade { 0% { opacity: 0; } 14% { opacity: .95; } 70% { opacity: .6; }
+  100% { opacity: 0; } }
 
 /* Mode toggle */
 .aigw-mode-btn { appearance: none; border: 1px solid rgba(128,128,128,.4);
@@ -258,25 +274,26 @@ window.__ModuleLoader__.load({
       const root = mk('aigw-root');
       const fs = mode === 'fullscreen';
       if (fs) {
-        // Ring mode: one Siri-style glow ring blooming at the send position
-        // (or the composer bottom center for Enter-key sends).
-        root.style.left = '0px';
-        root.style.top = '0px';
-        root.style.width = window.innerWidth + 'px';
-        root.style.height = window.innerHeight + 'px';
-        root.style.overflow = 'visible';
-        const b = btn ? btn.getBoundingClientRect() : null;
-        const cx = b && b.width > 4 ? b.left + b.width / 2 : ox;
-        const cy = b && b.width > 4 ? b.top + b.height / 2 : oy;
-        const size = card
-          ? Math.min(Math.max(r.width * 0.5, 220), 340)
-          : 260;
-        const ring = mk('aigw-siri-ring');
-        ring.style.width = size + 'px';
-        ring.style.height = size + 'px';
-        ring.style.left = cx + 'px';
-        ring.style.top = cy + 'px';
-        root.appendChild(ring);
+        // Ring mode: one Apple-Intelligence-style glow tracing the composer
+        // card's border — the edge lights up, the interior stays clear.
+        let er, radius = 18;
+        if (card) {
+          er = r;
+          const cs = window.getComputedStyle(card);
+          radius = Math.min(parseFloat(cs.borderTopLeftRadius) || 16, 28);
+        } else {
+          // Fallback: a card-sized ring centered above the composer area.
+          const w = Math.min(560, window.innerWidth - 48);
+          er = { left: (window.innerWidth - w) / 2, top: oy - 150, width: w, height: 132 };
+        }
+        root.style.left = er.left + 'px';
+        root.style.top = er.top + 'px';
+        root.style.width = er.width + 'px';
+        root.style.height = er.height + 'px';
+        root.style.setProperty('--aigw-radius', radius + 'px');
+        root.style.borderRadius = radius + 'px';
+        root.appendChild(mk('aigw-edge-glow'));
+        root.appendChild(mk('aigw-edge-comet'));
       } else {
         root.style.left = r.left + 'px';
         root.style.top = r.top + 'px';
@@ -297,7 +314,7 @@ window.__ModuleLoader__.load({
       addPulse(root, btn, r);
       document.body.appendChild(root);
       activeRoot = root;
-      activeTimer = window.setTimeout(dismiss, fs ? 1800 : 1900);
+      activeTimer = window.setTimeout(dismiss, fs ? 2400 : 1900);
     }
 
     // ---------------------------------------------------------------------------
@@ -336,8 +353,8 @@ window.__ModuleLoader__.load({
         h('path', { d: 'M7 16c1.2-1.6 2.7-2.4 5-2.4s3.8.8 5 2.4' })),
       fullscreen: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none',
         stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-        h('circle', { cx: 12, cy: 12, r: 8.5 }),
-        h('circle', { cx: 12, cy: 12, r: 4, opacity: .55 })),
+        h('rect', { x: 3, y: 6, width: 18, height: 12, rx: 3 }),
+        h('path', { d: 'M7 6v12M17 6v12', opacity: .45 })),
       off: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none',
         stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
         h('circle', { cx: 12, cy: 12, r: 9 }),
