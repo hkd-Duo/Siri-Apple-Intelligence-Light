@@ -99,7 +99,7 @@ window.__ModuleLoader__.load({
     }
 
     function modeTitle(m) {
-      if (m === 'fullscreen') return '发光特效:全屏扩散 / Glow: fullscreen';
+      if (m === 'fullscreen') return '发光特效:Siri 光环 / Glow: Siri ring';
       if (m === 'off') return '发光特效:关闭 / Glow: off';
       return '发光特效:输入框流光 / Glow: composer';
     }
@@ -186,47 +186,18 @@ window.__ModuleLoader__.load({
 @keyframes aigw-pulse { 0% { opacity: .9; transform: scale(.6); }
   100% { opacity: 0; transform: scale(1.6); } }
 
-/* Fullscreen variants: the whole DSH window breathes with the send. */
-.aigw-fs-halo { position: absolute; left: 50%; bottom: -30%; width: 160%; height: 150%;
-  transform: translateX(-50%); opacity: 0; filter: blur(34px) saturate(1.4);
-  background: radial-gradient(50% 55% at 50% 94%,
-    rgba(255,255,255,.22) 0%, rgba(100,210,255,.44) 16%, rgba(10,132,255,.34) 34%,
-    rgba(191,90,242,.30) 52%, rgba(255,55,95,.16) 70%, rgba(255,159,10,.10) 80%, transparent 90%);
-  animation: aigw-fs-halo 2.3s cubic-bezier(.22,.61,.36,1) forwards; }
-@keyframes aigw-fs-halo { 0% { opacity: 0; transform: translateX(-50%) scale(.5); }
-  18% { opacity: 1; } 66% { opacity: .55; }
-  100% { opacity: 0; transform: translateX(-50%) scale(1.45); } }
-
-.aigw-fs-ripple { position: absolute; border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,.35);
-  box-shadow: 0 0 32px rgba(100,210,255,.32), inset 0 0 32px rgba(191,90,242,.22);
-  filter: blur(3px); opacity: 0; transform: translate(-50%,-50%) scale(.2);
-  animation: aigw-fs-ripple 1.9s cubic-bezier(.17,.67,.4,1) forwards; }
-.aigw-fs-ripple.d2 { animation-delay: .25s; }
-.aigw-fs-ripple.d3 { animation-delay: .5s; }
-@keyframes aigw-fs-ripple { 0% { opacity: .55; transform: translate(-50%,-50%) scale(.2); }
-  100% { opacity: 0; transform: translate(-50%,-50%) scale(4); } }
-
-.aigw-fs-border { position: absolute; inset: 0; border-radius: 22px; padding: 3px; opacity: 0;
-  background: conic-gradient(from var(--aigw-angle) at 50% 50%,
-    transparent 0deg, rgba(255,255,255,0) 40deg, #ffffff 96deg,
-    rgba(100,210,255,.9) 130deg, #0a84ff 160deg, #bf5af2 210deg,
-    #ff375f 250deg, rgba(255,159,10,.8) 280deg, transparent 330deg, transparent 360deg);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  animation: aigw-sweep 2s cubic-bezier(.45,.05,.35,1) .1s forwards,
-    aigw-fade 2.1s ease-out .05s forwards; }
-
-.aigw-fs-flow { position: absolute; left: 50%; top: 60%;
-  width: var(--aigw-flow-size, 200vmax); height: var(--aigw-flow-size, 200vmax);
-  border-radius: 50%; opacity: 0; mix-blend-mode: screen; filter: blur(60px) saturate(1.5);
+/* Ring mode: one Siri-style glow ring blooming at the send position. */
+.aigw-siri-ring { position: absolute; border-radius: 50%;
   background: conic-gradient(from 0deg,
     #64d2ff 0deg, #0a84ff 60deg, #bf5af2 130deg, #ff375f 200deg,
     #ff9f0a 265deg, #64d2ff 360deg);
-  animation: aigw-flow-spin 2.6s cubic-bezier(.3,.1,.25,1) forwards,
-    aigw-flow-fade 2.3s ease-out forwards; }
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - var(--aigw-band, 16px)), #fff calc(50% - var(--aigw-band, 16px) + 1.5px));
+  mask: radial-gradient(farthest-side, transparent calc(50% - var(--aigw-band, 16px)), #fff calc(50% - var(--aigw-band, 16px) + 1.5px));
+  filter: blur(9px) saturate(1.3); opacity: 0;
+  transform: translate(-50%,-50%) scale(.55);
+  animation: aigw-siri-ring 1.7s cubic-bezier(.22,.61,.36,1) forwards; }
+@keyframes aigw-siri-ring { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.55); }
+  24% { opacity: .9; } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.5); } }
 
 /* Mode toggle */
 .aigw-mode-btn { appearance: none; border: 1px solid rgba(128,128,128,.4);
@@ -284,13 +255,28 @@ window.__ModuleLoader__.load({
       }
 
       dismiss();
-      const root = mk(mode === 'fullscreen' ? 'aigw-root' : 'aigw-root');
+      const root = mk('aigw-root');
       const fs = mode === 'fullscreen';
       if (fs) {
+        // Ring mode: one Siri-style glow ring blooming at the send position
+        // (or the composer bottom center for Enter-key sends).
         root.style.left = '0px';
         root.style.top = '0px';
         root.style.width = window.innerWidth + 'px';
         root.style.height = window.innerHeight + 'px';
+        root.style.overflow = 'visible';
+        const b = btn ? btn.getBoundingClientRect() : null;
+        const cx = b && b.width > 4 ? b.left + b.width / 2 : ox;
+        const cy = b && b.width > 4 ? b.top + b.height / 2 : oy;
+        const size = card
+          ? Math.min(Math.max(r.width * 0.5, 220), 340)
+          : 260;
+        const ring = mk('aigw-siri-ring');
+        ring.style.width = size + 'px';
+        ring.style.height = size + 'px';
+        ring.style.left = cx + 'px';
+        ring.style.top = cy + 'px';
+        root.appendChild(ring);
       } else {
         root.style.left = r.left + 'px';
         root.style.top = r.top + 'px';
@@ -302,22 +288,6 @@ window.__ModuleLoader__.load({
         root.style.borderRadius = radius + 'px';
         const flow = Math.max(r.width, r.height) * 1.35;
         root.style.setProperty('--aigw-flow-size', flow + 'px');
-      }
-
-      if (fs) {
-        root.appendChild(mk('aigw-fs-halo'));
-        root.appendChild(mk('aigw-fs-flow'));
-        root.appendChild(mk('aigw-fs-border'));
-        for (const delayCls of ['', ' d2', ' d3']) {
-          const rp = mk('aigw-fs-ripple' + delayCls);
-          const base = Math.max(r ? Math.min(r.width, 320) : 320, 200);
-          rp.style.width = base + 'px';
-          rp.style.height = base + 'px';
-          rp.style.left = ox + 'px';
-          rp.style.top = oy + 'px';
-          root.appendChild(rp);
-        }
-      } else {
         root.appendChild(mk('aigw-halo'));
         root.appendChild(mk('aigw-flow'));
         root.appendChild(mk('aigw-ring'));
@@ -327,7 +297,7 @@ window.__ModuleLoader__.load({
       addPulse(root, btn, r);
       document.body.appendChild(root);
       activeRoot = root;
-      activeTimer = window.setTimeout(dismiss, fs ? 2400 : 1900);
+      activeTimer = window.setTimeout(dismiss, fs ? 1800 : 1900);
     }
 
     // ---------------------------------------------------------------------------
@@ -366,8 +336,8 @@ window.__ModuleLoader__.load({
         h('path', { d: 'M7 16c1.2-1.6 2.7-2.4 5-2.4s3.8.8 5 2.4' })),
       fullscreen: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none',
         stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-        h('rect', { x: 2.5, y: 4, width: 19, height: 16, rx: 3 }),
-        h('path', { d: 'M8 4v16M16 4v16' })),
+        h('circle', { cx: 12, cy: 12, r: 8.5 }),
+        h('circle', { cx: 12, cy: 12, r: 4, opacity: .55 })),
       off: h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none',
         stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
         h('circle', { cx: 12, cy: 12, r: 9 }),
