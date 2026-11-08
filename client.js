@@ -28,12 +28,18 @@ window.__ModuleLoader__.load({
       return null;
     }
 
-    // The composer card is the first ancestor of the shared region that looks
-    // card-sized: full composer width and taller than one tool row.
+    // The composer card is the innermost ancestor of the shared region that
+    // looks card-sized: full composer width and at least two rows tall. The
+    // height cap grows with the viewport so a composer filled with long input
+    // (which grows well past 480px) still matches instead of falling back to
+    // the fixed bottom band — that mismatch drew the marquee outside the box.
     function composerCardFor(el) {
+      const maxH = Math.max(480, Math.round(window.innerHeight * 0.7));
       let region = el;
       for (let i = 0; region && region !== document.body && i < 8; i++) {
-        if (region.clientWidth >= 320 && region.clientHeight >= 88 && region.clientHeight < 480) {
+        if (region.clientWidth >= 320
+          && region.clientHeight >= 88
+          && region.clientHeight <= maxH) {
           return region;
         }
         region = region.parentElement;
@@ -162,7 +168,7 @@ window.__ModuleLoader__.load({
       // The marquee traces the composer card's border; when no card-shaped
       // ancestor is found, fall back to a card-sized band near the bottom.
       let er, radius = 18;
-      if (card) {
+      if (card && card.getBoundingClientRect().height <= window.innerHeight * 0.85) {
         er = card.getBoundingClientRect();
         if (!er || er.width < 80 || er.height < 40) return;
         const cs = window.getComputedStyle(card);
