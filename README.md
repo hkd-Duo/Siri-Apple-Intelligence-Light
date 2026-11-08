@@ -2,7 +2,7 @@
 
 一个 **DeepSeek Harness (DSH)** 的 UI 插件:发送消息(点发送按钮或按 Enter)时,一条 **Siri / Apple Intelligence 同款光带**沿输入框边框循环奔跑 —— 彩色光晕打底,白色彗星领跑,只有边框亮,输入框内部保持干净。
 
-![icon](icon.svg)
+<img src="icon.svg" width="96" alt="icon">
 
 ## 实际效果
 
