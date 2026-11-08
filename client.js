@@ -14,6 +14,7 @@ window.__ModuleLoader__.load({
     let anchor = null; // the currently mounted overlay anchor element
     let activeRoot = null; // the active effect layer
     let activeTimer = 0;
+    let trackFrame = 0; // rAF id of the live card-tracking loop
 
     function sharedAncestor(a, b, maxHops) {
       if (!a || !b || !a.isConnected || !b.isConnected) return null;
@@ -138,9 +139,6 @@ window.__ModuleLoader__.load({
 `;
 
     function mk(cls) { const d = document.createElement('div'); d.className = cls; return d; }
-
-    let activeTimer = 0;
-    let trackFrame = 0;
 
     function dismiss() {
       if (activeTimer) { window.clearTimeout(activeTimer); activeTimer = 0; }
